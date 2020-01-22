@@ -128,8 +128,6 @@ int main(int argc, char **argv) {
         {
             ImGui::Begin("CPU info");
             ImGui::Text("Cycle: %" PRIu64, nes.current_cycle());
-            ImGui::Text("Registers:");
-            ImGui::SameLine();
             ImGui::Text(to_string(nes.cpu_registers()).c_str());
             ImGui::End();
         }
