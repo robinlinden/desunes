@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
             static std::string last_exception{};
 
             ImGui::Begin("NES control");
+            static bool running = false;
             try {
                 if (ImGui::Button("Step")) {
                     nes.execute();
@@ -101,14 +102,24 @@ int main(int argc, char **argv) {
                         nes.execute();
                     }
                 }
+
                 ImGui::SameLine();
-                if (ImGui::Button("Run forever")) {
-                    while (true) {
-                        nes.execute();
+                if (!running) {
+                    if (ImGui::Button("Run")) {
+                        running = true;
                     }
+                } else {
+                    if (ImGui::Button("Stop")) {
+                        running = false;
+                    }
+                }
+
+                if (running) {
+                    nes.execute();
                 }
             } catch (const std::logic_error &e) {
                 last_exception = e.what();
+                running = false;
             }
             ImGui::Text(last_exception.c_str());
             ImGui::End();
