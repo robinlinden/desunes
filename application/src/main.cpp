@@ -1,3 +1,4 @@
+#include <nes/nes.h>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -9,6 +10,12 @@ int main(int argc, char **argv) {
     ImGui::SFML::Init(window);
 
     sf::Clock deltaClock;
+
+    n_e_s::nes::Nes nes;
+
+    if (argc > 1) {
+        nes.load_rom(argv[1]);
+    }
 
     while (window.isOpen()) {
         sf::Event event;
@@ -22,10 +29,17 @@ int main(int argc, char **argv) {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        ImGui::Begin("window");
-        ImGui::Text("hello");
-        ImGui::Button("button");
-        ImGui::End();
+        {
+            ImGui::Begin("Load rom");
+            static char rom_path[64];
+            ImGui::InputText("", rom_path, IM_ARRAYSIZE(rom_path));
+            ImGui::SameLine();
+            if (ImGui::Button("Load")) {
+                nes.load_rom(rom_path);
+            }
+
+            ImGui::End();
+        }
 
         window.clear();
         ImGui::SFML::Render(window);
