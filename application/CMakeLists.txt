@@ -7,6 +7,7 @@ add_executable(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         ImGui-SFML::ImGui-SFML
+        n_e_s::core
         n_e_s::nes
 )
 

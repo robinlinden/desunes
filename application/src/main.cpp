@@ -1,9 +1,35 @@
+#include <cinttypes>
+#include <sstream>
+
+#include <core/imos6502.h>
+
 #include <nes/nes.h>
 #include <imgui-SFML.h>
 #include <imgui.h>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+
+std::string to_string(const n_e_s::core::CpuRegisters &r) {
+    using namespace n_e_s::core;
+
+    std::stringstream ss;
+    ss << "PC: " << +r.pc;
+    ss << " SP: " << +r.sp;
+    ss << " A: " << +r.a;
+    ss << " X: " << +r.x;
+    ss << " Y: " << +r.y;
+    ss << " P: ";
+    ss << (r.p & N_FLAG ? "N" : "-");
+    ss << (r.p & V_FLAG ? "V" : "-");
+    ss << "-";
+    ss << (r.p & B_FLAG ? "B" : "-");
+    ss << (r.p & D_FLAG ? "D" : "-");
+    ss << (r.p & I_FLAG ? "I" : "-");
+    ss << (r.p & Z_FLAG ? "Z" : "-");
+    ss << (r.p & C_FLAG ? "C" : "-");
+    return ss.str();
+}
 
 int main(int argc, char **argv) {
     sf::RenderWindow window(sf::VideoMode(640, 480), "desunes");
@@ -70,6 +96,15 @@ int main(int argc, char **argv) {
                     nes.execute();
                 }
             }
+            ImGui::End();
+        }
+
+        {
+            ImGui::Begin("CPU info");
+            ImGui::Text("Cycle: %" PRIu64, nes.current_cycle());
+            ImGui::Text("Registers:");
+            ImGui::SameLine();
+            ImGui::Text(to_string(nes.cpu_registers()).c_str());
             ImGui::End();
         }
 
