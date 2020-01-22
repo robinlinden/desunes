@@ -41,6 +41,38 @@ int main(int argc, char **argv) {
             ImGui::End();
         }
 
+        {
+            ImGui::Begin("NES control");
+            if (ImGui::Button("Step")) {
+                nes.execute();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Step 10")) {
+                for (size_t i = 0; i < 10; ++i) {
+                    nes.execute();
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Step 100")) {
+                for (size_t i = 0; i < 100; ++i) {
+                    nes.execute();
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Step 1000")) {
+                for (size_t i = 0; i < 1000; ++i) {
+                    nes.execute();
+                }
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Run forever")) {
+                while (true) {
+                    nes.execute();
+                }
+            }
+            ImGui::End();
+        }
+
         window.clear();
         ImGui::SFML::Render(window);
         window.display();
