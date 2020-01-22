@@ -56,46 +56,61 @@ int main(int argc, char **argv) {
         ImGui::SFML::Update(window, deltaClock.restart());
 
         {
+            static std::string info_text{};
+
             ImGui::Begin("Load rom");
             static char rom_path[64];
             ImGui::InputText("", rom_path, IM_ARRAYSIZE(rom_path));
             ImGui::SameLine();
-            if (ImGui::Button("Load")) {
-                nes.load_rom(rom_path);
+            try {
+                if (ImGui::Button("Load")) {
+                    nes.load_rom(rom_path);
+                    info_text = "Rom loaded";
+                }
+            } catch (const std::invalid_argument &e) {
+                info_text = e.what();
             }
 
+            ImGui::Text(info_text.c_str());
             ImGui::End();
         }
 
         {
+            static std::string last_exception{};
+
             ImGui::Begin("NES control");
-            if (ImGui::Button("Step")) {
-                nes.execute();
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Step 10")) {
-                for (size_t i = 0; i < 10; ++i) {
+            try {
+                if (ImGui::Button("Step")) {
                     nes.execute();
                 }
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Step 100")) {
-                for (size_t i = 0; i < 100; ++i) {
-                    nes.execute();
+                ImGui::SameLine();
+                if (ImGui::Button("Step 10")) {
+                    for (size_t i = 0; i < 10; ++i) {
+                        nes.execute();
+                    }
                 }
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Step 1000")) {
-                for (size_t i = 0; i < 1000; ++i) {
-                    nes.execute();
+                ImGui::SameLine();
+                if (ImGui::Button("Step 100")) {
+                    for (size_t i = 0; i < 100; ++i) {
+                        nes.execute();
+                    }
                 }
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Run forever")) {
-                while (true) {
-                    nes.execute();
+                ImGui::SameLine();
+                if (ImGui::Button("Step 1000")) {
+                    for (size_t i = 0; i < 1000; ++i) {
+                        nes.execute();
+                    }
                 }
+                ImGui::SameLine();
+                if (ImGui::Button("Run forever")) {
+                    while (true) {
+                        nes.execute();
+                    }
+                }
+            } catch (const std::logic_error &e) {
+                last_exception = e.what();
             }
+            ImGui::Text(last_exception.c_str());
             ImGui::End();
         }
 
