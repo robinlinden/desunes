@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <core/imos6502.h>
+#include <core/ippu.h>
 
 #include <nes/nes.h>
 #include <imgui-SFML.h>
@@ -28,6 +29,19 @@ std::string to_string(const n_e_s::core::CpuRegisters &r) {
     ss << (r.p & I_FLAG ? "I" : "-");
     ss << (r.p & Z_FLAG ? "Z" : "-");
     ss << (r.p & C_FLAG ? "C" : "-");
+    return ss.str();
+}
+
+std::string to_string(const n_e_s::core::PpuRegisters &r) {
+    using namespace n_e_s::core;
+
+    std::stringstream ss;
+    ss << "ctrl: " << std::hex << std::showbase << +r.ctrl
+            << " mask: " << +r.mask << " status: " << +r.status
+            << " oamaddr: " << +r.oamaddr << std::endl << "x_scroll: "
+            << +r.fine_x_scroll << " vram_addr: " << r.vram_addr << "/"
+            << r.temp_vram_addr << " write_toggle: " << r.write_toggle;
+
     return ss.str();
 }
 
@@ -126,9 +140,10 @@ int main(int argc, char **argv) {
         }
 
         {
-            ImGui::Begin("CPU info");
+            ImGui::Begin("Info");
             ImGui::Text("Cycle: %" PRIu64, nes.current_cycle());
             ImGui::Text(to_string(nes.cpu_registers()).c_str());
+            ImGui::Text(to_string(nes.ppu_registers()).c_str());
             ImGui::End();
         }
 
