@@ -2,14 +2,71 @@
 #include "info_widget.h"
 #include "rom_widget.h"
 
+#include <core/immu.h>
+#include <core/ippu.h>
+#include <nes/nes.h>
+
 #include <iostream>
 
 #include <nes/nes.h>
 #include <imgui-SFML.h>
 #include <SFML/System.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+
+namespace {
+sf::Color to_color(uint8_t color_index) {
+    // Colours from blargg's full palette demo.
+    switch (color_index) {
+    case 1: return sf::Color(84, 84, 84);
+    case 2: return sf::Color(0, 30, 116);
+    case 3: return sf::Color(8, 16, 144);
+    default: return sf::Color::Black;
+    }
+}
+
+// johnor/n_e_s_vis
+sf::Texture load_pattern(n_e_s::nes::Nes *nes, uint16_t pos, uint8_t pattern_table) {
+    sf::Image image;
+    image.create(8, 8, sf::Color(10, 100, 0));
+
+    for (uint8_t row = 0; row < 8; ++row) {
+        // Second pattern table starts at 0x1000
+        const uint16_t base_address = pattern_table * 0x1000 + pos + row;
+        const uint8_t a = nes->ppu_mmu().read_byte(base_address);
+        const uint8_t b = nes->ppu_mmu().read_byte(base_address + 8);
+
+        for (uint8_t col = 0; col < 8; ++col) {
+            // First column is the leftmost bit.
+            const uint16_t mask = 1u << (7 - col);
+            const uint8_t color_index = !!(a & mask) + !!(b & mask);
+            image.setPixel(col, row, to_color(color_index));
+        }
+    }
+    sf::Texture texture;
+    texture.loadFromImage(image);
+    return texture;
+}
+
+static constexpr uint16_t kPatternTableSize{256};
+using PatternTable = std::array<sf::Texture, kPatternTableSize * 2>;
+PatternTable load_pattern_table(n_e_s::nes::Nes *nes) {
+    PatternTable patterns;
+
+    for (uint16_t i = 0; i < kPatternTableSize; ++i) {
+        patterns[i] = load_pattern(nes, i * 16, 0);
+    }
+
+    for (uint16_t i = 0; i < kPatternTableSize; ++i) {
+        patterns[kPatternTableSize + i] = load_pattern(nes, i * 16, 1);
+    }
+
+    return patterns;
+}
+} // namespace
 
 int main(int argc, char **argv) {
     sf::RenderWindow window(sf::VideoMode(640, 480), "desunes");
@@ -19,16 +76,23 @@ int main(int argc, char **argv) {
 
     n_e_s::nes::Nes nes;
 
-    if (argc > 1) {
-        nes.load_rom(argv[1]);
-    }
-
     bool running = false;
+    PatternTable patterns{};
     RomWidget rom_widget(&nes);
     ControlWidget ctrl_widget(&nes, &running);
     InfoWidget info_widget(&nes);
 
+    rom_widget.add_load_action([&] {
+        patterns = load_pattern_table(&nes);
+    });
+
+    if (argc > 1) {
+        nes.load_rom(argv[1]);
+        patterns = load_pattern_table(&nes);
+    }
+
     while (window.isOpen()) {
+        window.clear();
         deltaClock.restart();
 
         sf::Event event;
@@ -46,7 +110,19 @@ int main(int argc, char **argv) {
         ctrl_widget.update();
         info_widget.update();
 
-        window.clear();
+        const uint8_t pattern_table = nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
+        for (uint16_t y = 0; y < 30; ++y) {
+            for (uint16_t x = 0; x < 32; ++x) {
+                const uint16_t address = 0x2000 + y * 32 + x;
+                const uint8_t index = nes.ppu_mmu().read_byte(address);
+                const uint16_t actual_index = index + kPatternTableSize * pattern_table;
+                sf::Sprite sprite(patterns[actual_index]);
+                sprite.setScale(2, 2);
+                sprite.setPosition(sf::Vector2f(x * 16, y * 16));
+                window.draw(sprite);
+            }
+        }
+
         ImGui::SFML::Render(window);
         window.display();
 
