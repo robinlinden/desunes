@@ -1,49 +1,12 @@
-#include <cinttypes>
-#include <sstream>
-
-#include <core/imos6502.h>
-#include <core/ippu.h>
+#include "control_widget.h"
+#include "info_widget.h"
+#include "rom_widget.h"
 
 #include <nes/nes.h>
 #include <imgui-SFML.h>
-#include <imgui.h>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-
-std::string to_string(const n_e_s::core::CpuRegisters &r) {
-    using namespace n_e_s::core;
-
-    std::stringstream ss;
-    ss << "PC: " << +r.pc;
-    ss << " SP: " << +r.sp;
-    ss << " A: " << +r.a;
-    ss << " X: " << +r.x;
-    ss << " Y: " << +r.y;
-    ss << " P: ";
-    ss << (r.p & N_FLAG ? "N" : "-");
-    ss << (r.p & V_FLAG ? "V" : "-");
-    ss << "-";
-    ss << (r.p & B_FLAG ? "B" : "-");
-    ss << (r.p & D_FLAG ? "D" : "-");
-    ss << (r.p & I_FLAG ? "I" : "-");
-    ss << (r.p & Z_FLAG ? "Z" : "-");
-    ss << (r.p & C_FLAG ? "C" : "-");
-    return ss.str();
-}
-
-std::string to_string(const n_e_s::core::PpuRegisters &r) {
-    using namespace n_e_s::core;
-
-    std::stringstream ss;
-    ss << "ctrl: " << std::hex << std::showbase << +r.ctrl
-            << " mask: " << +r.mask << " status: " << +r.status
-            << " oamaddr: " << +r.oamaddr << std::endl << "x_scroll: "
-            << +r.fine_x_scroll << " vram_addr: " << r.vram_addr << "/"
-            << r.temp_vram_addr << " write_toggle: " << r.write_toggle;
-
-    return ss.str();
-}
 
 int main(int argc, char **argv) {
     sf::RenderWindow window(sf::VideoMode(640, 480), "desunes");
@@ -57,6 +20,10 @@ int main(int argc, char **argv) {
         nes.load_rom(argv[1]);
     }
 
+    RomWidget rom_widget(&nes);
+    ControlWidget ctrl_widget(&nes);
+    InfoWidget info_widget(&nes);
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -69,83 +36,9 @@ int main(int argc, char **argv) {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        {
-            static std::string info_text{};
-
-            ImGui::Begin("Load rom");
-            static char rom_path[64];
-            ImGui::InputText("", rom_path, IM_ARRAYSIZE(rom_path));
-            ImGui::SameLine();
-            try {
-                if (ImGui::Button("Load")) {
-                    nes.load_rom(rom_path);
-                    info_text = "Rom loaded";
-                }
-            } catch (const std::invalid_argument &e) {
-                info_text = e.what();
-            }
-
-            ImGui::Text(info_text.c_str());
-            ImGui::End();
-        }
-
-        {
-            static std::string last_exception{};
-
-            ImGui::Begin("NES control");
-            static bool running = false;
-            try {
-                if (ImGui::Button("Step")) {
-                    nes.execute();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Step 10")) {
-                    for (size_t i = 0; i < 10; ++i) {
-                        nes.execute();
-                    }
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Step 100")) {
-                    for (size_t i = 0; i < 100; ++i) {
-                        nes.execute();
-                    }
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Step 1000")) {
-                    for (size_t i = 0; i < 1000; ++i) {
-                        nes.execute();
-                    }
-                }
-
-                ImGui::SameLine();
-                if (!running) {
-                    if (ImGui::Button("Run")) {
-                        running = true;
-                    }
-                } else {
-                    if (ImGui::Button("Stop")) {
-                        running = false;
-                    }
-                }
-
-                if (running) {
-                    nes.execute();
-                }
-            } catch (const std::logic_error &e) {
-                last_exception = e.what();
-                running = false;
-            }
-            ImGui::Text(last_exception.c_str());
-            ImGui::End();
-        }
-
-        {
-            ImGui::Begin("Info");
-            ImGui::Text("Cycle: %" PRIu64, nes.current_cycle());
-            ImGui::Text(to_string(nes.cpu_registers()).c_str());
-            ImGui::Text(to_string(nes.ppu_registers()).c_str());
-            ImGui::End();
-        }
+        rom_widget.update();
+        ctrl_widget.update();
+        info_widget.update();
 
         window.clear();
         ImGui::SFML::Render(window);
