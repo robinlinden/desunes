@@ -4,7 +4,11 @@
 
 #include <imgui.h>
 
-ControlWidget::ControlWidget(n_e_s::nes::Nes *const nes) : nes_(nes) {}
+ControlWidget::ControlWidget(
+        n_e_s::nes::Nes *const nes,
+        bool *running) :
+    nes_(nes),
+    running_(running) {}
 
 void ControlWidget::update() {
     ImGui::Begin("NES control");
@@ -32,13 +36,13 @@ void ControlWidget::update() {
         }
 
         ImGui::SameLine();
-        if (!running_) {
+        if (!*running_) {
             if (ImGui::Button("Run")) {
-                running_ = true;
+                *running_ = true;
             }
         } else {
             if (ImGui::Button("Stop")) {
-                running_ = false;
+                *running_ = false;
             }
         }
 
@@ -57,13 +61,9 @@ void ControlWidget::update() {
         if (ImGui::Button("Reset")) {
             nes_->reset();
         }
-
-        if (running_) {
-            nes_->execute();
-        }
     } catch (const std::logic_error &e) {
         last_exception_ = e.what();
-        running_ = false;
+        *running_ = false;
     }
     ImGui::Text(last_exception_.c_str());
     ImGui::End();
