@@ -49,7 +49,7 @@ InfoWidget::InfoWidget(n_e_s::nes::Nes *const nes) : nes_(nes) {}
 void InfoWidget::update() {
     ImGui::Begin("Info");
     ImGui::Text("Cycle: %" PRIu64, nes_->current_cycle());
-    ImGui::Text(to_string(nes_->cpu_registers()).c_str());
-    ImGui::Text(to_string(nes_->ppu_registers()).c_str());
+    ImGui::TextUnformatted(to_string(nes_->cpu_registers()).c_str());
+    ImGui::TextUnformatted(to_string(nes_->ppu_registers()).c_str());
     ImGui::End();
 }
