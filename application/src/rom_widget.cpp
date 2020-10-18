@@ -1,5 +1,6 @@
 #include "rom_widget.h"
 
+#include <fstream>
 #include <stdexcept>
 
 #include <imgui.h>
@@ -12,7 +13,8 @@ void RomWidget::update() {
     ImGui::SameLine();
     try {
         if (ImGui::Button("Load")) {
-            nes_->load_rom(rom_path_.data());
+            std::fstream rom_name(rom_path_.data());
+            nes_->load_rom(rom_name);
             if (load_action_) {
                 load_action_();
             }

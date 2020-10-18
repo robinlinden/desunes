@@ -3,8 +3,8 @@
 #include <cinttypes>
 #include <sstream>
 
-#include <core/imos6502.h>
-#include <core/ippu.h>
+#include <nes/core/imos6502.h>
+#include <nes/core/ippu.h>
 
 #include <imgui.h>
 

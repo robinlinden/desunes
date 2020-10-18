@@ -2,10 +2,11 @@
 #include "info_widget.h"
 #include "rom_widget.h"
 
-#include <core/immu.h>
-#include <core/ippu.h>
+#include <nes/core/immu.h>
+#include <nes/core/ippu.h>
 #include <nes/nes.h>
 
+#include <fstream>
 #include <iostream>
 
 #include <nes/nes.h>
@@ -85,9 +86,10 @@ int main(int argc, char **argv) {
     rom_widget.add_load_action([&] {
         patterns = load_pattern_table(&nes);
     });
-
+  
     if (argc > 1) {
-        nes.load_rom(argv[1]);
+        std::ifstream rom_name(argv[1], std::ios::binary);
+        nes.load_rom(rom_name);
         patterns = load_pattern_table(&nes);
     }
 
@@ -110,17 +112,22 @@ int main(int argc, char **argv) {
         ctrl_widget.update();
         info_widget.update();
 
-        const uint8_t pattern_table = nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
-        for (uint16_t y = 0; y < 30; ++y) {
-            for (uint16_t x = 0; x < 32; ++x) {
-                const uint16_t address = 0x2000 + y * 32 + x;
-                const uint8_t index = nes.ppu_mmu().read_byte(address);
-                const uint16_t actual_index = index + kPatternTableSize * pattern_table;
-                sf::Sprite sprite(patterns[actual_index]);
-                sprite.setScale(2, 2);
-                sprite.setPosition(sf::Vector2f(x * 16, y * 16));
-                window.draw(sprite);
+        try {
+            const uint8_t pattern_table = 
+                nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
+            for (uint16_t y = 0; y < 30; ++y) {
+                for (uint16_t x = 0; x < 32; ++x) {
+                    const uint16_t address = 0x2000 + y * 32 + x;
+                    const uint8_t index = nes.ppu_mmu().read_byte(address);
+                    const uint16_t actual_index = 
+                        index + kPatternTableSize * pattern_table;
+                    sf::Sprite sprite(patterns[actual_index]);
+                    sprite.setScale(2, 2);
+                    sprite.setPosition(sf::Vector2f(x * 16, y * 16));
+                    window.draw(sprite);
+                }
             }
+        } catch (...) {
         }
 
         ImGui::SFML::Render(window);
