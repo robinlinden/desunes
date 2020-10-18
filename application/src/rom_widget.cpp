@@ -5,7 +5,8 @@
 
 #include <imgui.h>
 
-RomWidget::RomWidget(n_e_s::nes::Nes *nes) : nes_(nes) {}
+RomWidget::RomWidget(n_e_s::nes::Nes *nes, bool *rom_loaded)
+        : nes_(nes), rom_loaded_(rom_loaded) {}
 
 void RomWidget::update() {
     ImGui::Begin("Load rom");
@@ -15,6 +16,7 @@ void RomWidget::update() {
         if (ImGui::Button("Load")) {
             std::fstream rom_name(rom_path_.data());
             nes_->load_rom(rom_name);
+            *rom_loaded_ = true;
             if (load_action_) {
                 load_action_();
             }

@@ -78,8 +78,9 @@ int main(int argc, char **argv) {
     n_e_s::nes::Nes nes;
 
     bool running = false;
+    bool rom_loaded = false;
     PatternTable patterns{};
-    RomWidget rom_widget(&nes);
+    RomWidget rom_widget(&nes, &rom_loaded);
     ControlWidget ctrl_widget(&nes, &running);
     InfoWidget info_widget(&nes);
 
@@ -90,6 +91,7 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         std::ifstream rom_name(argv[1], std::ios::binary);
         nes.load_rom(rom_name);
+        rom_loaded = true;
         patterns = load_pattern_table(&nes);
     }
 
@@ -112,7 +114,8 @@ int main(int argc, char **argv) {
         ctrl_widget.update();
         info_widget.update();
 
-        try {
+        if (rom_loaded)
+        {
             const uint8_t pattern_table = 
                 nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
             for (uint16_t y = 0; y < 30; ++y) {
@@ -127,7 +130,6 @@ int main(int argc, char **argv) {
                     window.draw(sprite);
                 }
             }
-        } catch (...) {
         }
 
         ImGui::SFML::Render(window);
