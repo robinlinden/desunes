@@ -5,11 +5,6 @@
 #include <nes/core/immu.h>
 #include <nes/core/ippu.h>
 #include <nes/nes.h>
-
-#include <fstream>
-#include <iostream>
-
-#include <nes/nes.h>
 #include <imgui-SFML.h>
 #include <SFML/System.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -17,6 +12,9 @@
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+
+#include <fstream>
+#include <iostream>
 
 namespace {
 sf::Color to_color(uint8_t color_index) {
@@ -80,17 +78,18 @@ int main(int argc, char **argv) {
     bool running = false;
     bool rom_loaded = false;
     PatternTable patterns{};
-    RomWidget rom_widget(&nes, &rom_loaded);
+    RomWidget rom_widget(&nes);
     ControlWidget ctrl_widget(&nes, &running);
     InfoWidget info_widget(&nes);
 
     rom_widget.add_load_action([&] {
         patterns = load_pattern_table(&nes);
+        rom_loaded = true;
     });
-  
+
     if (argc > 1) {
-        std::ifstream rom_name(argv[1], std::ios::binary);
-        nes.load_rom(rom_name);
+        std::ifstream rom{argv[1], std::ios::binary};
+        nes.load_rom(rom);
         rom_loaded = true;
         patterns = load_pattern_table(&nes);
     }
@@ -114,8 +113,7 @@ int main(int argc, char **argv) {
         ctrl_widget.update();
         info_widget.update();
 
-        if (rom_loaded)
-        {
+        if (rom_loaded) {
             const uint8_t pattern_table = 
                 nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
             for (uint16_t y = 0; y < 30; ++y) {
