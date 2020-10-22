@@ -13,7 +13,7 @@ void RomWidget::update() {
     ImGui::SameLine();
     try {
         if (ImGui::Button("Load")) {
-            std::fstream rom(rom_path_.data(), std::ios::binary);
+            std::ifstream rom(rom_path_.data(), std::ios::binary);
             nes_->load_rom(rom);
             if (load_action_) {
                 load_action_();
@@ -24,7 +24,7 @@ void RomWidget::update() {
         info_text_ = e.what();
     }
 
-    ImGui::Text(info_text_.c_str());
+    ImGui::Text("%s", info_text_.c_str());
     ImGui::End();
 }
 
