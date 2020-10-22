@@ -6,33 +6,29 @@
 
 ControlWidget::ControlWidget(
         n_e_s::nes::Nes *const nes,
-        bool *running) :
+        bool *running,
+        int *step_running) :
     nes_(nes),
-    running_(running) {}
+    running_(running),
+    step_running_(step_running) {}
 
 void ControlWidget::update() {
     ImGui::Begin("NES control");
     try {
         if (ImGui::Button("Step")) {
-            nes_->execute();
+            *step_running_ = 1;
         }
         ImGui::SameLine();
         if (ImGui::Button("Step 10")) {
-            for (size_t i = 0; i < 10; ++i) {
-                nes_->execute();
-            }
+            *step_running_ = 10;
         }
         ImGui::SameLine();
         if (ImGui::Button("Step 100")) {
-            for (size_t i = 0; i < 100; ++i) {
-                nes_->execute();
-            }
+            *step_running_ = 100;
         }
         ImGui::SameLine();
         if (ImGui::Button("Step 1000")) {
-            for (size_t i = 0; i < 1000; ++i) {
-                nes_->execute();
-            }
+            *step_running_ = 1000;
         }
 
         ImGui::SameLine();
@@ -47,20 +43,17 @@ void ControlWidget::update() {
         }
 
         if (ImGui::Button("Step 10000")) {
-            for (size_t i = 0; i < 10000; ++i) {
-                nes_->execute();
-            }
+            *step_running_ = 10000;
         }
         ImGui::SameLine();
         if (ImGui::Button("Step 100000")) {
-            for (size_t i = 0; i < 100000; ++i) {
-                nes_->execute();
-            }
+            *step_running_ = 100000;
         }
         ImGui::SameLine();
         if (ImGui::Button("Reset")) {
             nes_->reset();
         }
+
     } catch (const std::logic_error &e) {
         last_exception_ = e.what();
         *running_ = false;

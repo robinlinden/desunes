@@ -3,6 +3,7 @@
 #include "rom_widget.h"
 
 #include <nes/core/immu.h>
+#include <nes/core/invalid_address.h>
 #include <nes/core/ippu.h>
 #include <nes/nes.h>
 #include <imgui-SFML.h>
@@ -55,6 +56,8 @@ using PatternTable = std::array<sf::Texture, kPatternTableSize * 2>;
 PatternTable load_pattern_table(n_e_s::nes::Nes *nes) {
     PatternTable patterns;
 
+    std::cerr << sizeof(patterns);
+
     for (uint16_t i = 0; i < kPatternTableSize; ++i) {
         patterns[i] = load_pattern(nes, i * 16, 0);
     }
@@ -76,11 +79,15 @@ int main(int argc, char **argv) {
     n_e_s::nes::Nes nes;
 
     bool running = false;
+    int step_running = 0;
     bool rom_loaded = false;
+    std::string run_status = "Stopped";
+    std::string err_status = "";
+
     PatternTable patterns{};
     RomWidget rom_widget(&nes);
-    ControlWidget ctrl_widget(&nes, &running);
-    InfoWidget info_widget(&nes);
+    ControlWidget ctrl_widget(&nes, &running, &step_running);
+    InfoWidget info_widget(&nes, &run_status, &err_status);
 
     rom_widget.add_load_action([&] {
         patterns = load_pattern_table(&nes);
@@ -108,6 +115,18 @@ int main(int argc, char **argv) {
         }
 
         ImGui::SFML::Update(window, deltaClock.getElapsedTime());
+
+        if (running) {
+            run_status = "Running";
+            err_status = "";
+        } else if (step_running > 0) {
+            run_status = std::string("Running (step: ") + 
+                         std::to_string(step_running) + 
+                         std::string(")");
+            err_status = "";
+        } else {
+            run_status = "Stopped";
+        }
 
         rom_widget.update();
         ctrl_widget.update();
@@ -141,10 +160,33 @@ int main(int argc, char **argv) {
         constexpr size_t n_e_s_clock = master_clock / 4;
         constexpr size_t fps = 60;
         constexpr size_t tick_per_frame = n_e_s_clock / fps;
-        if (running) {
-            for (size_t i = 0; i < tick_per_frame; ++i) {
-                nes.execute();
+        try {
+            if (running || step_running > 0) {
+                for (size_t i = 0; i < tick_per_frame; ++i) {
+                    nes.execute();
+                    if (step_running > 0) {
+                        step_running -= 1;
+                    }
+                    if (!running && step_running == 0) {
+                        break;
+                    }
+                }
             }
+        } catch (const std::invalid_argument & e) {
+            std::cerr << e.what() << std::endl;
+            err_status = e.what();
+            running = false;
+            step_running = 0;
+        } catch (const std::logic_error &e) {
+            std::cerr << e.what() << std::endl;
+            err_status = e.what();
+            running = false;
+            step_running = 0;
+        } catch (const n_e_s::core::InvalidAddress &e) {
+            std::cerr << e.what() << std::endl;
+            err_status = e.what();
+            running = false;
+            step_running = 0;
         }
 
         const auto frameTime = deltaClock.getElapsedTime();

@@ -6,11 +6,12 @@
 
 class ControlWidget {
 public:
-    ControlWidget(n_e_s::nes::Nes *nes, bool *running);
+    ControlWidget(n_e_s::nes::Nes *nes, bool *running, int *step_running);
     void update();
 
 private:
     n_e_s::nes::Nes *const nes_;
     bool *running_;
+    int *step_running_;
     std::string last_exception_{};
 };
