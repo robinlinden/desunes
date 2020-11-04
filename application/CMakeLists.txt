@@ -3,6 +3,8 @@ project(desunes_application)
 add_executable(${PROJECT_NAME}
     src/control_widget.cpp
     src/control_widget.h
+    src/file_widget.cpp
+    src/file_widget.h
     src/info_widget.cpp
     src/info_widget.h
     src/main.cpp

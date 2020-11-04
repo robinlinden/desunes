@@ -1,10 +1,11 @@
 #pragma once
 
-#include <array>
 #include <functional>
 #include <string>
 
 #include <nes/nes.h>
+
+#include "file_widget.h"
 
 class RomWidget {
 public:
@@ -17,6 +18,9 @@ private:
     n_e_s::nes::Nes *const nes_;
     std::function<void(void)> load_action_{};
 
-    std::array<char, 64> rom_path_{};
+    std::string rom_path_{};
     std::string info_text_{};
+
+    bool file_widget_open_{false};
+    FileWidget file_widget_{};
 };
