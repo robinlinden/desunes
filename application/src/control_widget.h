@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include <nes/nes.h>
 
 class ControlWidget {
@@ -13,5 +11,4 @@ private:
     n_e_s::nes::Nes *const nes_;
     bool *running_;
     int *step_running_;
-    std::string last_exception_{};
 };
