@@ -2,7 +2,7 @@ include(FetchContent)
 
 FetchContent_Declare(n_e_s
     GIT_REPOSITORY https://github.com/evilcorpltd/n_e_s.git
-    GIT_TAG 5bfb01a66f4c6e9397dd2ce20cdc56f09fca53bc 
+    GIT_TAG d18a7903276d0f72b92760e48c32af5dc0f87bcd
 )
 
 FetchContent_MakeAvailable(n_e_s)
