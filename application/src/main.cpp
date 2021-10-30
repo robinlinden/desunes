@@ -1,5 +1,6 @@
 #include "control_widget.h"
 #include "info_widget.h"
+#include "keyboard_controller.h"
 #include "rom_widget.h"
 
 #include <nes/core/immu.h>
@@ -89,6 +90,24 @@ int main(int argc, char **argv) {
     ControlWidget ctrl_widget(&nes, &running, &step_running);
     InfoWidget info_widget(&nes, &run_status, &err_status);
 
+    KeyboardController keyboard_controller1(nes.controller1());
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::A, n_e_s::core::INesController::Button::A);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::Z, n_e_s::core::INesController::Button::B);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::S, n_e_s::core::INesController::Button::Select);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::X, n_e_s::core::INesController::Button::Start);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::Up, n_e_s::core::INesController::Button::Up);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::Down, n_e_s::core::INesController::Button::Down);
+    keyboard_controller1.map_key(
+        sf::Keyboard::Key::Left, n_e_s::core::INesController::Button::Left);
+    keyboard_controller1.map_key(sf::Keyboard::Key::Right,
+        n_e_s::core::INesController::Button::Right);
+
     rom_widget.add_load_action([&] {
         patterns = load_pattern_table(&nes);
         rom_loaded = true;
@@ -105,12 +124,29 @@ int main(int argc, char **argv) {
         window.clear();
         deltaClock.restart();
 
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            ImGui::SFML::ProcessEvent(event);
-
-            if (event.type == sf::Event::Closed) {
-                window.close();
+            sf::Event event;
+            while (window.pollEvent(event)) {
+                ImGui::SFML::ProcessEvent(event);
+    
+            sf::Event event;
+            while (window.pollEvent(event)) {
+                ImGui::SFML::ProcessEvent(event);
+                switch (event.type) {
+                case sf::Event::Closed: {
+                    window.close();
+                    break;
+                }
+                case sf::Event::KeyPressed: {
+                    keyboard_controller1.set_key(event.key.code, true);
+                    break;
+                }
+                case sf::Event::KeyReleased: {
+                    keyboard_controller1.set_key(event.key.code, false);
+                    break;
+                }
+                default:
+                    break;
+                }
             }
         }
 

@@ -7,6 +7,8 @@ add_executable(${PROJECT_NAME}
     src/file_widget.h
     src/info_widget.cpp
     src/info_widget.h
+    src/keyboard_controller.h
+    src/keyboard_controller.cpp
     src/main.cpp
     src/rom_widget.cpp
     src/rom_widget.h
