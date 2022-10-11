@@ -34,11 +34,12 @@ std::string to_string(const n_e_s::core::PpuRegisters &r) {
     using namespace n_e_s::core;
 
     std::stringstream ss;
-    ss << "ctrl: " << std::hex << std::showbase << +r.ctrl
-            << " mask: " << +r.mask << " status: " << +r.status
+    ss << "ctrl: " << std::hex << std::showbase << +r.ctrl.value()
+            << " mask: " << +r.mask.value() << " status: " << +r.status.value()
             << " oamaddr: " << +r.oamaddr << std::endl
-            << "x_scroll: " << +r.fine_x_scroll << " vram_addr: " << r.vram_addr
-            << "/" << r.temp_vram_addr << " write_toggle: " << r.write_toggle;
+            << "x_scroll: " << +r.fine_x_scroll << " vram_addr: " 
+            << r.vram_addr.value() << "/" << r.temp_vram_addr.value() 
+            << " write_toggle: " << r.write_toggle;
 
     return ss.str();
 }
