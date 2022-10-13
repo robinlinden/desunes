@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
 
         if (rom_loaded) {
             const uint8_t pattern_table = 
-                nes.ppu_registers().ctrl & 0x10 ? 1 : 0;
+                nes.ppu_registers().ctrl.value() & 0x10 ? 1 : 0;
             for (uint16_t y = 0; y < 30; ++y) {
                 for (uint16_t x = 0; x < 32; ++x) {
                     const uint16_t address = 0x2000 + y * 32 + x;

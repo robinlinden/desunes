@@ -7,12 +7,12 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 RomWidget::RomWidget(n_e_s::nes::Nes *nes) : nes_(nes) {
-    file_widget_.add_fileopen_action([=] {
+    file_widget_.add_fileopen_action([this] {
         std::string filename = file_widget_.get_selection();
         rom_path_ = filename;
         file_widget_open_ = false;
     });
-    file_widget_.add_cancel_action([=] { file_widget_open_ = false; });
+    file_widget_.add_cancel_action([this] { file_widget_open_ = false; });
 }
 
 void RomWidget::update() {
