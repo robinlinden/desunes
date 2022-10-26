@@ -18,59 +18,6 @@
 #include <fstream>
 #include <iostream>
 
-namespace {
-sf::Color to_color(uint8_t color_index) {
-    // Colours from blargg's full palette demo.
-    switch (color_index) {
-    case 1: return sf::Color(84, 84, 84);
-    case 2: return sf::Color(0, 30, 116);
-    case 3: return sf::Color(8, 16, 144);
-    default: return sf::Color::Black;
-    }
-}
-
-// johnor/n_e_s_vis
-sf::Texture load_pattern(n_e_s::nes::Nes *nes, uint16_t pos, uint8_t pattern_table) {
-    sf::Image image;
-    image.create(8, 8, sf::Color(10, 100, 0));
-
-    for (uint8_t row = 0; row < 8; ++row) {
-        // Second pattern table starts at 0x1000
-        const uint16_t base_address = pattern_table * 0x1000 + pos + row;
-        const uint8_t a = nes->ppu_mmu().read_byte(base_address);
-        const uint8_t b = nes->ppu_mmu().read_byte(base_address + 8);
-
-        for (uint8_t col = 0; col < 8; ++col) {
-            // First column is the leftmost bit.
-            const uint16_t mask = 1u << (7 - col);
-            const uint8_t color_index = !!(a & mask) + !!(b & mask);
-            image.setPixel(col, row, to_color(color_index));
-        }
-    }
-    sf::Texture texture;
-    texture.loadFromImage(image);
-    return texture;
-}
-
-static constexpr uint16_t kPatternTableSize{256};
-using PatternTable = std::array<sf::Texture, kPatternTableSize * 2>;
-PatternTable load_pattern_table(n_e_s::nes::Nes *nes) {
-    PatternTable patterns;
-
-    std::cerr << sizeof(patterns);
-
-    for (uint16_t i = 0; i < kPatternTableSize; ++i) {
-        patterns[i] = load_pattern(nes, i * 16, 0);
-    }
-
-    for (uint16_t i = 0; i < kPatternTableSize; ++i) {
-        patterns[kPatternTableSize + i] = load_pattern(nes, i * 16, 1);
-    }
-
-    return patterns;
-}
-} // namespace
-
 int main(int argc, char **argv) {
     sf::RenderWindow window(sf::VideoMode(640, 480), "desunes");
     ImGui::SFML::Init(window);
@@ -85,7 +32,6 @@ int main(int argc, char **argv) {
     std::string run_status = "Stopped";
     std::string err_status = "";
 
-    PatternTable patterns{};
     RomWidget rom_widget(&nes);
     ControlWidget ctrl_widget(&nes, &running, &step_running);
     InfoWidget info_widget(&nes, &run_status, &err_status);
@@ -109,7 +55,6 @@ int main(int argc, char **argv) {
         n_e_s::core::INesController::Button::Right);
 
     rom_widget.add_load_action([&] {
-        patterns = load_pattern_table(&nes);
         rom_loaded = true;
     });
 
@@ -117,8 +62,10 @@ int main(int argc, char **argv) {
         std::ifstream rom{argv[1], std::ios::binary};
         nes.load_rom(rom);
         rom_loaded = true;
-        patterns = load_pattern_table(&nes);
     }
+
+    sf::Image screen_image;
+    screen_image.create(256, 240, sf::Color(10, 100, 0));
 
     while (window.isOpen()) {
         window.clear();
@@ -168,22 +115,12 @@ int main(int argc, char **argv) {
         ctrl_widget.update();
         info_widget.update();
 
-        if (rom_loaded) {
-            const uint8_t pattern_table = 
-                nes.ppu_registers().ctrl.value() & 0x10 ? 1 : 0;
-            for (uint16_t y = 0; y < 30; ++y) {
-                for (uint16_t x = 0; x < 32; ++x) {
-                    const uint16_t address = 0x2000 + y * 32 + x;
-                    const uint8_t index = nes.ppu_mmu().read_byte(address);
-                    const uint16_t actual_index = 
-                        index + kPatternTableSize * pattern_table;
-                    sf::Sprite sprite(patterns[actual_index]);
-                    sprite.setScale(2, 2);
-                    sprite.setPosition(sf::Vector2f(x * 16, y * 16));
-                    window.draw(sprite);
-                }
-            }
-        }
+        sf::Texture texture;
+        texture.loadFromImage(screen_image);
+        sf::Sprite sprite(texture);
+        sprite.setScale(2, 2);
+        sprite.setPosition(sf::Vector2f(0, 0));
+        window.draw(sprite);
 
         ImGui::SFML::Render(window);
         window.display();
@@ -199,7 +136,17 @@ int main(int argc, char **argv) {
         try {
             if (running || step_running > 0) {
                 for (size_t i = 0; i < tick_per_frame; ++i) {
-                    nes.execute();
+                    auto pixel = nes.execute();
+
+                    if (pixel.has_value()) {
+                        screen_image.setPixel(
+                            pixel->x,
+                            pixel->y,
+                            sf::Color(pixel->color.r,
+                                      pixel->color.g,
+                                      pixel->color.b));
+                    }
+
                     if (step_running > 0) {
                         step_running -= 1;
                     }
